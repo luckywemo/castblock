@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <title>CastBoard</title>
+</head>
+<body>
+    <div class="container">
+        <h1>CastBoard</h1>
+        <div class="status" id="connection-status">Not connected</div>
+        <div class="actions">
+            <button id="connect-button">Connect Wallet</button>
+        </div>
+        <div class="leaderboard-section">
+            <h2>Leaderboard</h2>
+            <div class="input-row">
+                <input type="text" id="address-input" placeholder="Enter Ethereum address or Farcaster username" />
+                <button id="add-address-button">Add to Leaderboard</button>
+            </div>
+            <table id="leaderboard-table">
+                <thead>
+                    <tr>
+                        <th>Address / Username</th>
+                        <th>NFT Count</th>
+                        <th>Farcaster Activity</th>
+                        <th>View NFTs</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboard-body">
+                    <!-- Dynamic rows -->
+                </tbody>
+            </table>
+        </div>
+        <div class="nft-viewer-section" id="nft-viewer-section" style="display:none;">
+            <h2>NFTs for <span id="nft-owner"></span></h2>
+            <div id="nft-list" class="nft-list"></div>
+            <button id="close-nft-viewer">Close</button>
+        </div>
+    </div>
+    <script type="module" src="script.js"></script>
+</body>
+</html> 

@@ -7,7 +7,7 @@ body {
 }
 
 .container {
-    max-width: 600px;
+    max-width: 800px;
     margin: 0 auto;
     padding: 20px;
     background-color: white;
@@ -42,7 +42,11 @@ button {
     background-color: #007bff;
     color: white;
     cursor: pointer;
-    flex: 1;
+    transition: background-color 0.2s;
+}
+
+button:hover:not(:disabled) {
+    background-color: #0056b3;
 }
 
 button:disabled {
@@ -50,26 +54,129 @@ button:disabled {
     cursor: not-allowed;
 }
 
-button:hover:not(:disabled) {
-    background-color: #0056b3;
-}
-
-.message-box {
+.input-row {
+    display: flex;
+    gap: 10px;
     margin-bottom: 20px;
 }
 
-textarea {
-    width: 100%;
-    height: 100px;
+input[type="text"] {
+    flex: 1;
     padding: 10px;
     border: 1px solid #ddd;
     border-radius: 5px;
-    resize: vertical;
 }
 
-.user-info {
-    padding: 15px;
+.sort-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.sort-btn {
+    background-color: #6c757d;
+}
+
+.sort-btn:hover {
+    background-color: #5a6268;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+th, td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+th {
+    background-color: #f8f9fa;
+    font-weight: bold;
+}
+
+.nft-viewer-section {
+    margin-top: 20px;
+    padding: 20px;
     background-color: #f8f9fa;
     border-radius: 5px;
-    margin-top: 20px;
+}
+
+.nft-filters {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.nft-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.nft-item {
+    background-color: white;
+    padding: 15px;
+    border-radius: 5px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.nft-item img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+.nft-info {
+    font-size: 0.9em;
+}
+
+.nft-title {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.nft-contract {
+    color: #6c757d;
+    font-size: 0.8em;
+    margin-bottom: 5px;
+}
+
+.nft-description {
+    color: #666;
+    font-size: 0.9em;
+}
+
+.error-message {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.view-nfts-btn, .remove-btn {
+    padding: 5px 10px;
+    font-size: 0.9em;
+    margin-right: 5px;
+}
+
+.remove-btn {
+    background-color: #dc3545;
+}
+
+.remove-btn:hover {
+    background-color: #c82333;
 } 

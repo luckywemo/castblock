@@ -19,13 +19,18 @@
                 <input type="text" id="address-input" placeholder="Enter Ethereum address or Farcaster username" />
                 <button id="add-address-button">Add to Leaderboard</button>
             </div>
+            <div class="sort-controls">
+                <button class="sort-btn" data-sort="username">Sort by Name</button>
+                <button class="sort-btn" data-sort="nftCount">Sort by NFT Count</button>
+                <button class="sort-btn" data-sort="activity">Sort by Activity</button>
+            </div>
             <table id="leaderboard-table">
                 <thead>
                     <tr>
                         <th>Address / Username</th>
                         <th>NFT Count</th>
                         <th>Farcaster Activity</th>
-                        <th>View NFTs</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="leaderboard-body">
@@ -35,6 +40,13 @@
         </div>
         <div class="nft-viewer-section" id="nft-viewer-section" style="display:none;">
             <h2>NFTs for <span id="nft-owner"></span></h2>
+            <div class="nft-filters">
+                <input type="text" id="nft-search" placeholder="Search NFTs..." />
+                <select id="nft-sort">
+                    <option value="name">Sort by Name</option>
+                    <option value="collection">Sort by Collection</option>
+                </select>
+            </div>
             <div id="nft-list" class="nft-list"></div>
             <button id="close-nft-viewer">Close</button>
         </div>

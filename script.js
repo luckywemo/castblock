@@ -23,6 +23,7 @@ const userInfo = document.getElementById('user-info');
 const addressInput = document.getElementById('address-input');
 const addAddressButton = document.getElementById('add-address-button');
 const leaderboardBody = document.getElementById('leaderboard-body');
+const sortButtons = document.querySelectorAll('.sort-btn');
 const nftViewerSection = document.getElementById('nft-viewer-section');
 const nftOwner = document.getElementById('nft-owner');
 const nftList = document.getElementById('nft-list');
@@ -31,7 +32,7 @@ const closeNftViewer = document.getElementById('close-nft-viewer');
 // State
 let isConnected = false;
 let userAddress = null;
-let leaderboard = [];
+let leaderboardData = [];
 let currentSort = {
     field: config.SORT_OPTIONS.NFT_COUNT,
     ascending: false
@@ -118,47 +119,23 @@ async function fetchFarcasterActivity(address) {
     }
 }
 
-// Sort leaderboard
-function sortLeaderboard(field) {
-    if (currentSort.field === field) {
-        currentSort.ascending = !currentSort.ascending;
-    } else {
-        currentSort.field = field;
-        currentSort.ascending = false;
-    }
-
-    leaderboard.sort((a, b) => {
-        let comparison = 0;
-        if (field === config.SORT_OPTIONS.NFT_COUNT) {
-            comparison = a.nftCount - b.nftCount;
-        } else if (field === config.SORT_OPTIONS.ACTIVITY) {
-            comparison = a.activity - b.activity;
-        } else {
-            comparison = a.username.localeCompare(b.username);
-        }
-        return currentSort.ascending ? comparison : -comparison;
-    });
-
-    renderLeaderboard();
-}
-
 // Connect wallet
 async function connectWallet() {
-    setLoading(connectButton, true);
-    try {
-        const { address } = await sdk.connectWallet();
-        isConnected = true;
-        userAddress = address;
-        connectionStatus.textContent = 'Connected';
-        connectionStatus.style.backgroundColor = '#d4edda';
-        castButton.disabled = false;
-        userInfo.textContent = `Connected with: ${address.slice(0, 6)}...${address.slice(-4)}`;
-    } catch (error) {
-        connectionStatus.textContent = 'Connection failed';
-        connectionStatus.style.backgroundColor = '#f8d7da';
-        showError('Failed to connect wallet: ' + error.message);
-    } finally {
-        setLoading(connectButton, false);
+    if (typeof window.ethereum !== 'undefined') {
+        try {
+            const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+            userAddress = accounts[0];
+            connectionStatus.textContent = 'Connected: ' + userAddress;
+            connectionStatus.classList.add('connected');
+            connectButton.textContent = 'Connected';
+            connectButton.disabled = true;
+            userInfo.textContent = `Connected with: ${userAddress.slice(0, 6)}...${userAddress.slice(-4)}`;
+        } catch (error) {
+            console.error('Error connecting wallet:', error);
+            alert('Failed to connect wallet. Please try again.');
+        }
+    } else {
+        alert('Please install MetaMask to use this application.');
     }
 }
 
@@ -178,114 +155,122 @@ async function castMessage() {
     }
 }
 
-// Add to leaderboard
-addAddressButton.addEventListener('click', async () => {
-    let input = addressInput.value.trim();
-    if (!input) {
-        showError('Please enter an address or username');
-        return;
-    }
-
-    setLoading(addAddressButton, true);
+// Fetch leaderboard data
+async function fetchLeaderboard() {
     try {
-        let address = input;
-        let username = null;
-
-        if (!input.startsWith('0x')) {
-            username = input;
-            address = await resolveFarcasterUsername(input);
-        }
-
-        const [nftData, activity] = await Promise.all([
-            fetchNfts(address),
-            fetchFarcasterActivity(address)
-        ]);
-
-        leaderboard.push({
-            address,
-            username: username || address,
-            nftCount: nftData.count,
-            nfts: nftData.nfts,
-            activity
-        });
-
+        const response = await fetch('http://localhost:3000/api/leaderboard');
+        if (!response.ok) throw new Error('Failed to fetch leaderboard');
+        leaderboardData = await response.json();
         renderLeaderboard();
-        addressInput.value = '';
     } catch (error) {
-        showError(error.message);
-    } finally {
-        setLoading(addAddressButton, false);
+        console.error('Error fetching leaderboard:', error);
+        alert('Failed to load leaderboard data.');
     }
-});
+}
 
 // Render leaderboard
 function renderLeaderboard() {
     leaderboardBody.innerHTML = '';
-    leaderboard.forEach((entry, idx) => {
+    leaderboardData.forEach(user => {
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td>${entry.username}</td>
-            <td>${entry.nftCount}</td>
-            <td>${entry.activity}</td>
+            <td>${user.username} (${user.address})</td>
+            <td>${user.nftCount}</td>
+            <td>${user.activityScore}</td>
             <td>
-                <button data-idx="${idx}" class="view-nfts-btn">View NFTs</button>
-                <button data-idx="${idx}" class="remove-btn">Remove</button>
+                <button onclick="viewNFTs('${user.address}')">View NFTs</button>
+                <button onclick="removeUser('${user.address}')">Remove</button>
             </td>
         `;
         leaderboardBody.appendChild(row);
     });
-
-    // Add event listeners
-    document.querySelectorAll('.view-nfts-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const idx = e.target.getAttribute('data-idx');
-            showNftViewer(idx);
-        });
-    });
-
-    document.querySelectorAll('.remove-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const idx = e.target.getAttribute('data-idx');
-            leaderboard.splice(idx, 1);
-            renderLeaderboard();
-        });
-    });
 }
 
-// Show NFT viewer
-function showNftViewer(idx) {
-    const entry = leaderboard[idx];
-    nftOwner.textContent = entry.username;
-    nftList.innerHTML = '';
-
-    if (entry.nfts.length === 0) {
-        nftList.innerHTML = '<p>No NFTs found.</p>';
-    } else {
-        entry.nfts.forEach(nft => {
-            const div = document.createElement('div');
-            div.className = 'nft-item';
-            div.innerHTML = `
-                <img src="${nft.media?.[0]?.gateway || ''}" alt="NFT" style="max-width:100px;max-height:100px;" />
-                <div class="nft-info">
-                    <div class="nft-title">${nft.title || 'Untitled'}</div>
-                    <div class="nft-contract">${nft.contract?.address?.slice(0, 6)}...${nft.contract?.address?.slice(-4)}</div>
-                    <div class="nft-description">${nft.description || 'No description available'}</div>
-                </div>
-            `;
-            nftList.appendChild(div);
-        });
+// Add user to leaderboard
+async function addUser() {
+    const address = addressInput.value.trim();
+    if (!address) {
+        alert('Please enter an Ethereum address or Farcaster username.');
+        return;
     }
-    nftViewerSection.style.display = 'block';
+    try {
+        const response = await fetch('http://localhost:3000/api/add-user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ address, username: address })
+        });
+        if (!response.ok) throw new Error('Failed to add user');
+        alert('User added successfully!');
+        addressInput.value = '';
+        fetchLeaderboard();
+    } catch (error) {
+        console.error('Error adding user:', error);
+        alert('Failed to add user. Please try again.');
+    }
 }
 
-// Close NFT viewer
-closeNftViewer.addEventListener('click', () => {
-    nftViewerSection.style.display = 'none';
-});
+// Remove user from leaderboard
+async function removeUser(address) {
+    if (!confirm('Are you sure you want to remove this user?')) return;
+    try {
+        const response = await fetch(`http://localhost:3000/api/remove-user/${address}`, {
+            method: 'DELETE'
+        });
+        if (!response.ok) throw new Error('Failed to remove user');
+        alert('User removed successfully!');
+        fetchLeaderboard();
+    } catch (error) {
+        console.error('Error removing user:', error);
+        alert('Failed to remove user. Please try again.');
+    }
+}
+
+// View NFTs for a user
+async function viewNFTs(address) {
+    try {
+        const response = await fetch(`http://localhost:3000/api/nfts/${address}`);
+        if (!response.ok) throw new Error('Failed to fetch NFTs');
+        const nfts = await response.json();
+        nftOwner.textContent = address;
+        nftList.innerHTML = nfts.map(nft => `
+            <div class="nft-item">
+                <h3>${nft.name}</h3>
+                <p>Collection: ${nft.collection}</p>
+            </div>
+        `).join('');
+        nftViewerSection.style.display = 'block';
+    } catch (error) {
+        console.error('Error fetching NFTs:', error);
+        alert('Failed to load NFTs. Please try again.');
+    }
+}
+
+// Sort leaderboard
+function sortLeaderboard(sortBy) {
+    leaderboardData.sort((a, b) => {
+        if (sortBy === 'username') return a.username.localeCompare(b.username);
+        if (sortBy === 'nftCount') return b.nftCount - a.nftCount;
+        if (sortBy === 'activity') return b.activityScore - a.activityScore;
+        return 0;
+    });
+    renderLeaderboard();
+}
 
 // Event Listeners
 connectButton.addEventListener('click', connectWallet);
 castButton.addEventListener('click', castMessage);
+addAddressButton.addEventListener('click', addUser);
+closeNftViewer.addEventListener('click', () => {
+    nftViewerSection.style.display = 'none';
+});
+sortButtons.forEach(button => {
+    button.addEventListener('click', () => {
+        sortLeaderboard(button.dataset.sort);
+    });
+});
+
+// Initial load
+fetchLeaderboard();
 
 // Check if already connected
 sdk.isConnected().then(connected => {
